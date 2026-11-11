@@ -3,6 +3,13 @@ const chatForm = document.getElementById("chatForm");
 const userInput = document.getElementById("userInput");
 const chatWindow = document.getElementById("chatWindow");
 const sendBtn = document.getElementById("sendBtn");
+const conversationHistory = [
+  {
+    role: "system",
+    content:
+      "You are a helpful beauty and product advisor. Use earlier messages to keep context, including details the user has shared such as their name and past questions. Do not invent personal details.",
+  },
+];
 
 // Add a message to the chat and scroll to show the newest one.
 function addChatMessage(message, role) {
@@ -16,7 +23,9 @@ function addChatMessage(message, role) {
 }
 
 // Show the welcome message.
+const welcomeMessage = "👋 Hello! How can I help you today?";
 addChatMessage("👋 Hello! How can I help you today?", "assistant");
+conversationHistory.push({ role: "assistant", content: welcomeMessage });
 
 /* Send the user's message to the Cloudflare Worker and show its reply. */
 chatForm.addEventListener("submit", async (e) => {
@@ -39,7 +48,7 @@ chatForm.addEventListener("submit", async (e) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        message: message,
+        messages: [...conversationHistory, { role: "user", content: message }],
       }),
     });
 
@@ -57,6 +66,10 @@ chatForm.addEventListener("submit", async (e) => {
       throw new Error("The chatbot response did not contain a message.");
     }
 
+    conversationHistory.push(
+      { role: "user", content: message },
+      { role: "assistant", content: reply },
+    );
     addChatMessage(reply, "assistant");
   } catch (error) {
     console.error(error);
